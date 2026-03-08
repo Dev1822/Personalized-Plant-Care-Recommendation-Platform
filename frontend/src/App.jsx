@@ -31,7 +31,7 @@ export default function App() {
       try {
         const [plantsData] = await Promise.all([
           api.getPlants(),
-          fetch('/api/health').then(r => r.ok ? 'ok' : 'error').catch(() => 'error')
+          fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/health`).then(r => r.ok ? 'ok' : 'error').catch(() => 'error')
         ]);
         setPlants(plantsData.plants || []);
         setBackendStatus('ok');
