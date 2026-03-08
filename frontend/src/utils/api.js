@@ -8,7 +8,13 @@ async function request(path, options = {}) {
     ...options,
   });
 
-  const data = await res.json();
+  let data;
+  try {
+    const text = await res.text();
+    data = text ? JSON.parse(text) : {};
+  } catch (err) {
+    throw new Error(`Failed to parse response from server. The backend might be offline.`);
+  }
 
   if (!res.ok || !data.success) {
     throw new Error(data.error || `Request failed: ${res.status}`);
