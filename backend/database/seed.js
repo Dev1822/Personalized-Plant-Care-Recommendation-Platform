@@ -7,6 +7,7 @@ const dbConfig = {
   port: process.env.DB_PORT || 3306,
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'plantpal',
   multipleStatements: false
 };
 
@@ -311,10 +312,6 @@ async function seed() {
     // Connect without database first
     conn = await mysql.createConnection(dbConfig);
     console.log('📦 Connected to MySQL');
-
-    // Create database and tables
-    await conn.execute('CREATE DATABASE IF NOT EXISTS plantpal');
-    await conn.changeUser({ database: 'plantpal' });
 
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS plants (
