@@ -13,7 +13,10 @@ const pool = mysql.createPool({
   queueLimit: 0,
   // Auto-reconnect on lost connections
   enableKeepAlive: true,
-  keepAliveInitialDelay: 0
+  keepAliveInitialDelay: 0,
+  ssl: {
+    rejectUnauthorized: false
+  }
 });
 
 // Test connection on startup

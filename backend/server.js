@@ -15,8 +15,9 @@ const PORT = process.env.PORT || 3001;
 app.use(cors({
   origin: [
     'http://localhost:5173',
-    'https://plant-pal-ten.vercel.app'
-  ]
+    'https://plant-pal-ten.vercel.app',
+    process.env.FRONTEND_URL
+  ].filter(Boolean)
 }));
 app.use(express.json());
 

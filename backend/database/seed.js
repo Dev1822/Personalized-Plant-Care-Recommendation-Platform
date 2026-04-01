@@ -8,7 +8,10 @@ const dbConfig = {
   user: process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || '',
   database: process.env.DB_NAME || 'plantpal',
-  multipleStatements: false
+  multipleStatements: false,
+  ssl: {
+    rejectUnauthorized: false
+  }
 };
 
 // 200+ plant species with ideal care conditions
