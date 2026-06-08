@@ -1,33 +1,44 @@
-// database/db.js - MySQL connection pool
-const mysql = require('mysql2/promise');
+// database/db.js - SQLite connection pool wrapper
+const sqlite3 = require('sqlite3').verbose();
+const { open } = require('sqlite');
+const path = require('path');
 require('dotenv').config();
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 3306,
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
-  database: process.env.DB_NAME || 'plantpal',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-  // Auto-reconnect on lost connections
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
-  ssl: {
-    rejectUnauthorized: false
-  }
+let dbPromise = open({
+  filename: path.join(__dirname, 'plantpal.sqlite'),
+  driver: sqlite3.Database
 });
 
-// Test connection on startup
+const pool = {
+  getConnection: async () => {
+    const db = await dbPromise;
+    return {
+      release: () => {}, // no-op for compatibility
+      execute: async (sql, params = []) => {
+        sql = sql.replace(/INSERT IGNORE/g, 'INSERT OR IGNORE');
+        if (sql.trim().toUpperCase().startsWith('SELECT')) {
+          const rows = await db.all(sql, params);
+          return [rows, []];
+        } else {
+          const result = await db.run(sql, params);
+          return [{ insertId: result.lastID, affectedRows: result.changes }, []];
+        }
+      },
+      end: async () => {} // no-op
+    };
+  },
+  execute: async (sql, params = []) => {
+    const conn = await pool.getConnection();
+    return conn.execute(sql, params);
+  }
+};
+
 async function testConnection() {
   try {
-    const conn = await pool.getConnection();
-    console.log('✅ MySQL connected successfully');
-    conn.release();
+    await dbPromise;
+    console.log('✅ SQLite connected successfully');
   } catch (err) {
-    console.error('❌ MySQL connection failed:', err.message);
-    console.log('💡 Make sure MySQL is running and credentials in .env are correct');
+    console.error('❌ SQLite connection failed:', err.message);
   }
 }
 
