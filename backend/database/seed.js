@@ -1,6 +1,18 @@
 // database/seed.js - Seeds the database with 200+ plant species
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
-const pool = require('./db');
+const mysql = require('mysql2/promise');
+
+const dbConfig = {
+  host: process.env.DB_HOST || 'localhost',
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'plantpal',
+  multipleStatements: false,
+  ssl: {
+    rejectUnauthorized: false
+  }
+};
 
 // 200+ plant species with ideal care conditions
 const plants = [
@@ -300,51 +312,52 @@ const plants = [
 async function seed() {
   let conn;
   try {
-    conn = await pool.getConnection();
-    console.log('📦 Connected to SQLite');
+    // Connect without database first
+    conn = await mysql.createConnection(dbConfig);
+    console.log('📦 Connected to MySQL');
 
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS plants (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL UNIQUE,
-        common_name TEXT,
-        category TEXT,
-        ideal_light TEXT NOT NULL,
-        ideal_water_frequency INTEGER NOT NULL,
-        ideal_temperature_min REAL NOT NULL,
-        ideal_temperature_max REAL NOT NULL,
-        ideal_humidity INTEGER NOT NULL,
-        fertilizer_schedule TEXT NOT NULL,
-        care_difficulty TEXT DEFAULT 'Moderate',
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL UNIQUE,
+        common_name VARCHAR(100),
+        category VARCHAR(50),
+        ideal_light ENUM('Low', 'Medium', 'High') NOT NULL,
+        ideal_water_frequency INT NOT NULL,
+        ideal_temperature_min DECIMAL(4,1) NOT NULL,
+        ideal_temperature_max DECIMAL(4,1) NOT NULL,
+        ideal_humidity INT NOT NULL,
+        fertilizer_schedule VARCHAR(100) NOT NULL,
+        care_difficulty ENUM('Easy', 'Moderate', 'Hard') DEFAULT 'Moderate',
         description TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(150) NOT NULL UNIQUE,
+        password VARCHAR(255) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
 
     await conn.execute(`
       CREATE TABLE IF NOT EXISTS user_plants (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        plant_id INTEGER NOT NULL,
-        light TEXT NOT NULL,
-        temperature REAL NOT NULL,
-        humidity INTEGER NOT NULL,
-        watering_habit INTEGER NOT NULL,
-        health_score INTEGER,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        user_id INT,
+        plant_id INT NOT NULL,
+        light ENUM('Low', 'Medium', 'High') NOT NULL,
+        temperature DECIMAL(4,1) NOT NULL,
+        humidity INT NOT NULL,
+        watering_habit INT NOT NULL,
+        health_score INT,
         notes TEXT,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (plant_id) REFERENCES plants(id) ON DELETE CASCADE,
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
       )
